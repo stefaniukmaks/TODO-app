@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Todo App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 40px 20px; }
+    .container { background: white; border-radius: 8px; padding: 24px; width: 100%; max-width: 500px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { margin-bottom: 20px; font-size: 24px; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 20px; }
+    input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .btn-add { background: #4CAF50; color: white; }
+    .todo { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eee; }
+    .todo span { flex: 1; font-size: 15px; }
+    .todo span.done { text-decoration: line-through; color: #aaa; }
+    .btn-done { background: #2196F3; color: white; }
+    .btn-del { background: #f44336; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 Todo App</h1>
+    <div class="input-row">
+      <input id="title" placeholder="Нова задача..." onkeydown="if(event.key==='Enter')addTodo()">
+      <button class="btn-add" onclick="addTodo()">Додати</button>
+    </div>
+    <div id="todos"></div>
+  </div>
+
+  <script>
+    async function load() {
+      const res = await fetch('/api/todos');
+      const todos = await res.json();
+      document.getElementById('todos').innerHTML = todos.map(t => `
+        <div class="todo">
+          <span class="${t.done ? 'done' : ''}">${t.title}</span>
+          <button class="btn-done" onclick="toggle(${t.id})">${t.done ? '↩️' : '✅'}</button>
+          <button class="btn-del" onclick="remove(${t.id})">🗑️</button>
+        </div>
+      `).join('');
+    }
+
+    async function addTodo() {
+      const title = document.getElementById('title').value.trim();
+      if (!title) return;
+      await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      document.getElementById('title').value = '';
+      load();
+    }
+
+    async function toggle(id) {
+      await fetch(`/api/todos/${id}`, { method: 'PATCH' });
+      load();
+    }
+
+    async function remove(id) {
+      await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+      load();
+    }
+
+    load();
+  </script>
+</body>
+</html>
